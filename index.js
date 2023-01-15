@@ -1,10 +1,13 @@
 let canvas;
+let canvasPreview;
 let ctx;
+let ctxPreview;
 let canvasWidth;
 let canvasHeight;
 let imageData;
 let data;
-let colors = [0x000000, 0x2d5f3a, 0x48854a, 0x08352e, 0x4a6e6a, 0xd7c273, 0x012823, 0x8ead4f];
+let colors = [];
+// let colors = [0x000000, 0x2d5f3a, 0x48854a, 0x08352e, 0x4a6e6a, 0xd7c273, 0x012823, 0x8ead4f];
 
 let MAX_ITERATIONS = 24;
 let clickX = 0;
@@ -12,19 +15,38 @@ let clickY = 0;
 let ZOOM_FACTOR = 1;
 let RESOLUTION = 0.5;
 
+let color_partition = 16;
+
+const color1 = {
+    R: 0,
+    G: 0,
+    B: 0,
+}
+
+const color2 = {
+    R: 0,
+    G: 0,
+    B: 0,
+}
+
+const lerpColor = {
+    R: 0,
+    G: 0,
+    B: 0,
+}
 
 const rVal = {
-    start : -4,
-    end : 4,
+    start : -2,
+    end : 2,
 }
 
 const iVal = {
-    start : -2.25,
-    end : 2.25,
+    start : -1.125,
+    end : 1.125,
 }
 
 const orig = {
-    x: 0,
+    x: -1,
     y: 0,
 }
 
@@ -61,14 +83,16 @@ class ComplexNumber {
 
 function init() {
     canvas = document.getElementById("canvas");
+    canvasPreview = document.getElementById("gradientPreview");
     ctx = canvas.getContext("2d");
+    ctxPreview = canvasPreview.getContext("2d");
     canvasWidth = canvas.width;
     canvasHeight = canvas.height;
     
     imageData = ctx.createImageData(canvasWidth, canvasHeight);
     data  = imageData.data;
 
-    draw();
+    gradient();
 
     canvas.addEventListener("mousedown", function(e) {
         getMousePos(canvas,e)
@@ -89,7 +113,7 @@ function reset() {
     iVal.start = -2.25;
     iVal.end = 2.25;
 
-    orig.x = 0;
+    orig.x = -1;
     orig.y = 0;
 
     ZOOM_FACTOR = 1;
@@ -113,7 +137,7 @@ function draw() {
                 z.add(c);
                 n = n + 1;
             }
-            drawPixelConvert(x,y, colors[n% 8]);
+            drawPixelConvert(x,y, colors[n % MAX_ITERATIONS]);
         }
     }
     drawPixelConvert(0,0,0xFFFFFF);
@@ -137,7 +161,6 @@ function zoom() {
 function drawPixelConvert(x, y, color) {
     let newX = x + canvasWidth * 1/2
     let newY = y + canvasHeight * 1/2
-
     drawPixel(newX, newY, color);
 }
 
@@ -168,8 +191,6 @@ function getMousePos(canvas, e) {
     clickY = e.clientY - canvas.getBoundingClientRect().top - canvasHeight/2;
     orig.y += clickY * (iVal.end - iVal.start)/(canvasHeight);
 
-    console.log(`(${clickX},${clickY})`);
-
     rVal.start += orig.x;
     rVal.end += orig.x;
     iVal.start += orig.y;
@@ -181,3 +202,49 @@ function save() {
     // window.location.href = image;
 }
 
+function gradient() {
+    colors = [];
+    colors.push(0x000000);
+    MAX_ITERATIONS = document.getElementById("iterationSelect").value;
+
+    let hexCode1 = parseInt(document.getElementById("color1").value.substring(1),16);
+    let hexCode2 = parseInt(document.getElementById("color2").value.substring(1),16);
+
+    color1.B = (hexCode1 & 0x0000FF);
+    color1.G = (hexCode1 & 0x00FF00) >> 8;
+    color1.R = (hexCode1 & 0xFF0000) >> 16;
+    
+    color2.B = (hexCode2 & 0x0000FF);
+    color2.G = (hexCode2 & 0x00FF00) >> 8;
+    color2.R = (hexCode2 & 0xFF0000) >> 16;
+
+    for (let i = 0; i < 1; i += 1/MAX_ITERATIONS) {
+        lerpColor.R = Math.trunc(color1.R + (color2.R - color1.R)*i);
+        lerpColor.G = Math.trunc(color1.G + (color2.G - color1.G)*i);
+        lerpColor.B = Math.trunc(color1.B + (color2.B - color1.B)*i);
+        makeColor(lerpColor, 1);
+    }
+
+    let grad = ctxPreview.createLinearGradient(0,0,200,100);
+    grad.addColorStop(0, makeColor(color1,0));
+    grad.addColorStop(1, makeColor(color2,0));
+
+    ctxPreview.fillStyle = grad;
+    ctxPreview.fillRect(0,0,400,100);
+
+
+
+    draw();
+}
+
+function makeColor(lerpColor, push) {
+    let value = 0x000000;
+    value |= lerpColor.B;
+    value |= (lerpColor.G << 8);
+    value |= (lerpColor.R << 16);
+
+    if (push == 1){
+        colors.push(value);
+    }
+    return "#" + value.toString(16);
+}
