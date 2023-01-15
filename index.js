@@ -7,6 +7,7 @@ let canvasHeight;
 let imageData;
 let data;
 let colors = [];
+let NUM_COLOR = 2;
 // let colors = [0x000000, 0x2d5f3a, 0x48854a, 0x08352e, 0x4a6e6a, 0xd7c273, 0x012823, 0x8ead4f];
 
 let MAX_ITERATIONS = 24;
@@ -225,16 +226,21 @@ function gradient() {
         makeColor(lerpColor, 1);
     }
 
+    generatePalletPrev();
+    draw();
+}
+
+function generatePalletPrev() {
     let grad = ctxPreview.createLinearGradient(0,0,200,100);
+    // for(let i = 1; i < NUM_COLOR; i++) {
+    //     let str = "color" + i;
+    //     grad.addColorStop(i * (1/NUM_COLOR), document.getElementById(str).value);
+    // }
     grad.addColorStop(0, makeColor(color1,0));
     grad.addColorStop(1, makeColor(color2,0));
 
     ctxPreview.fillStyle = grad;
     ctxPreview.fillRect(0,0,400,100);
-
-
-
-    draw();
 }
 
 function makeColor(lerpColor, push) {
@@ -247,4 +253,19 @@ function makeColor(lerpColor, push) {
         colors.push(value);
     }
     return "#" + value.toString(16);
+}
+
+function addColor() {
+    NUM_COLOR++;
+    let newColorDiv = document.createElement("div");
+    newColorDiv.id = "colorDiv" + NUM_COLOR;
+    newColorDiv.classList.add("col");
+    document.getElementById("colorRow").appendChild(newColorDiv);
+    let newColorPicker = document.createElement("input");
+    newColorPicker.classList.add("form-control")
+    newColorPicker.type = "color";
+    newColorPicker.id = "color" + NUM_COLOR;
+    document.getElementById("colorDiv" + NUM_COLOR).appendChild(newColorPicker);
+
+
 }

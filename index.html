@@ -28,7 +28,6 @@
               </div>
               <div class="col">
                 <select name="" id="iterationSelect" class="form-control w-100 h-100" onfocusout="gradient()">
-                  <option value=16>16</option>
                   <option value=24>25</option>
                   <option value="80">80</option>
                   <option value=104>100</option>
@@ -87,25 +86,25 @@
               </div>
             </div>
             <hr>
-            <h5 class="card-text">Color Palette (shift click to delete)</h5>
+            <h5 class="card-text">Color Pallet</h5>
+            <div>
+              <!-- <button class="btn btn-dark w-25" onclick="addColor()">+</button> -->
+              <!-- <button class="btn btn-dark w-25" onclick="addColor()">-</button> -->
+            </div>
             <div class="row mt-3" id="colorRow">
               <div class="col">
                 <!-- <label for="" class="form-label">Color 1</label> -->
-                <input type="color" class="form-control" id="color1" value="#e1e2e3">
+                <input type="color" class="form-control" id="color1" value="#6900d1">
               </div>
               <div class="col">
                 <!-- <label for="" class="form-label">Color 2</label> -->
-                <input type="color" class="form-control" id="color2" value="#3e7f22">
-              </div>
-              <div class="col-2">
-                <!-- <label for="" class="form-label">Color 2</label> -->
-                <button class="btn btn-dark" onclick="addColor()">+</button>
+                <input type="color" class="form-control" id="color2" value="#42fffc">
               </div>
             </div>
             <div class="row mt-3">
               <div class="col">
-                <label for="" class="form-label">Generated Pallet</label>
-                <canvas id="gradientPreview" class="border w-100" height="25px;"></canvas>
+                <label for="" class="form-label">Generated Pallet (click apply!)</label>
+                <canvas id="gradientPreview" class="border w-100" height="25px;" onclick="generatePalletPrev()"></canvas>
               </div>
             </div>
             <div class="row mt-3">
