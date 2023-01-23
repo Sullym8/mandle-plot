@@ -14,27 +14,9 @@ let MAX_ITERATIONS = 24;
 let clickX = 0;
 let clickY = 0;
 let ZOOM_FACTOR = 1;
-let RESOLUTION = 0.5;
+let RESOLUTION = 0;
 
 let color_partition = 16;
-
-const color1 = {
-    R: 0,
-    G: 0,
-    B: 0,
-}
-
-const color2 = {
-    R: 0,
-    G: 0,
-    B: 0,
-}
-
-const lerpColor = {
-    R: 0,
-    G: 0,
-    B: 0,
-}
 
 const rVal = {
     start : -2,
@@ -82,6 +64,38 @@ class ComplexNumber {
 
 }
 
+class Color {
+    constructor() {
+        this.red = 0;
+        this.green = 0;
+        this.blue = 0;
+        this.str = "#00000000";
+    }
+
+    generateColor(red, green, blue) {
+        this.red = red;
+        this.green = green;
+        this.blue = blue;
+        this.str = this.generateString();
+    }
+
+    generateColorFromString(colorString){
+        let hexCode = parseInt(colorString.substring(1),16);
+
+        this.blue = (hexCode & 0x0000FF);
+        this.green = (hexCode & 0x00FF00) >> 8;
+        this.red = (hexCode & 0xFF0000) >> 16;
+        this.str = colorString;
+    }
+
+    generateString() {
+        return "#" + this.red.toString(16).padStart(2,"0") + this.green.toString(16).padStart(2,"0") + this.blue.toString(16).padStart(2,"0");
+    }
+}
+
+let colorGrad1;
+let colorGrad2;
+
 function init() {
     canvas = document.getElementById("canvas");
     canvasPreview = document.getElementById("gradientPreview");
@@ -89,6 +103,9 @@ function init() {
     ctxPreview = canvasPreview.getContext("2d");
     canvasWidth = canvas.width;
     canvasHeight = canvas.height;
+
+    colorGrad1 = new Color();
+    colorGrad2 = new Color();
     
     imageData = ctx.createImageData(canvasWidth, canvasHeight);
     data  = imageData.data;
@@ -97,6 +114,10 @@ function init() {
 
     canvas.addEventListener("mousedown", function(e) {
         getMousePos(canvas,e)
+        draw();
+    });
+
+    document.getElementById("resMul").addEventListener("input", function(e) {
         draw();
     });
 
@@ -123,13 +144,15 @@ function reset() {
 }
 
 function draw() {
-    for(let x = -canvasWidth/2; x < canvasWidth/2; x++) {
-        for (let y = -canvasHeight/2; y < canvasHeight/2; y++) {
+    console.log(colors)
+    RESOLUTION = parseFloat(document.getElementById("resMul").value);
+    for(let x = -RESOLUTION * canvasWidth/2; x < RESOLUTION * canvasWidth/2; x++) {
+        for (let y = -RESOLUTION * canvasHeight/2; y < RESOLUTION * canvasHeight/2; y++) {
             let z = new ComplexNumber();
             let c = new ComplexNumber();
             let n = 0;
 
-            c.setComplex((x)*(rVal.end - rVal.start)/(canvasWidth) + orig.x, (y)*(iVal.end - iVal.start)/(canvasHeight) + orig.y);
+            c.setComplex((x)*(rVal.end - rVal.start)/(RESOLUTION * canvasWidth) + orig.x, (y)*(iVal.end - iVal.start)/(RESOLUTION * canvasHeight) + orig.y);
 
             MAX_ITERATIONS = document.getElementById("iterationSelect").value;
 
@@ -139,12 +162,14 @@ function draw() {
                 n = n + 1;
             }
             drawPixelConvert(x,y, colors[n % MAX_ITERATIONS]);
+            // drawPixelConvert(x,y, colors[0]);
         }
     }
-    drawPixelConvert(0,0,0xFFFFFF);
+
     document.getElementById("realInput").value = orig.x;
     document.getElementById("imaginaryInput").value = orig.y;
     ctx.putImageData(imageData, 0, 0);
+    ctx.drawImage(canvas, 0, 0, (1/RESOLUTION)*canvas.width, (1/RESOLUTION)*canvas.height );   
 }
 
 function drawSet() {
@@ -160,22 +185,18 @@ function zoom() {
 }
 
 function drawPixelConvert(x, y, color) {
-    let newX = x + canvasWidth * 1/2
-    let newY = y + canvasHeight * 1/2
+    let newX = x + canvasWidth * 1/2 * RESOLUTION;
+    let newY = y + canvasHeight * 1/2 * RESOLUTION;
     drawPixel(newX, newY, color);
 }
 
 function drawPixel(x, y, color) {
-    let r = (color & 0xFF0000) >> 16;
-    let g = (color & 0x00FF00) >> 8;
-    let b = (color & 0x0000FF);
-    let a = 0xFF;
-
     let loc = (canvasWidth*4) * y + 4*x;
-    data[loc] = r;
-    data[loc + 1] = g;
-    data[loc + 2] = b;
-    data[loc + 3] = a;
+
+    data[loc] = color.red;
+    data[loc + 1] = color.green;
+    data[loc + 2] = color.blue;
+    data[loc + 3] = 255;
 }
 
 function changeWindow() {
@@ -205,54 +226,65 @@ function save() {
 
 function gradient() {
     colors = [];
-    colors.push(0x000000);
+    colors.push(new Color());
     MAX_ITERATIONS = document.getElementById("iterationSelect").value;
 
-    let hexCode1 = parseInt(document.getElementById("color1").value.substring(1),16);
-    let hexCode2 = parseInt(document.getElementById("color2").value.substring(1),16);
+    for(let i = 1; i <= (NUM_COLOR - 1); i++) {
+        // console.log(document.getElementById("color"+i).value);
+        colorGrad1.generateColorFromString(document.getElementById("color"+i).value);
+        colorGrad2.generateColorFromString(document.getElementById("color"+(i+1)).value);
 
-    color1.B = (hexCode1 & 0x0000FF);
-    color1.G = (hexCode1 & 0x00FF00) >> 8;
-    color1.R = (hexCode1 & 0xFF0000) >> 16;
-    
-    color2.B = (hexCode2 & 0x0000FF);
-    color2.G = (hexCode2 & 0x00FF00) >> 8;
-    color2.R = (hexCode2 & 0xFF0000) >> 16;
+        let colorsPerPartition = MAX_ITERATIONS/(NUM_COLOR - 1);
+        console.log(colorsPerPartition);
 
-    for (let i = 0; i < 1; i += 1/MAX_ITERATIONS) {
-        lerpColor.R = Math.trunc(color1.R + (color2.R - color1.R)*i);
-        lerpColor.G = Math.trunc(color1.G + (color2.G - color1.G)*i);
-        lerpColor.B = Math.trunc(color1.B + (color2.B - color1.B)*i);
-        makeColor(lerpColor, 1);
+        // while(j < )
+
+        // for (let j = 0; j < 1; j += 1/((NUM_COLOR - 1) * MAX_ITERATIONS)) {
+        for (let j = 0; j < colorsPerPartition; j++) {
+            let tempCol = new Color();
+            let r = Math.trunc(colorGrad1.red + (colorGrad2.red - colorGrad1.red)*(j/colorsPerPartition));
+            let g = Math.trunc(colorGrad1.green + (colorGrad2.green - colorGrad1.green)*(j/colorsPerPartition));
+            let b = Math.trunc(colorGrad1.blue + (colorGrad2.blue - colorGrad1.blue)*(j/colorsPerPartition));
+            tempCol.generateColor(r,g,b);
+            // console.log(tempCol);
+            colors.push(tempCol);
+        }
     }
+
+    // console.log(colorGrad1);
+    // console.log(colorGrad2);
+
+    // let hexCode1 = parseInt(document.getElementById("color1").value.substring(1),16);
+    // let hexCode2 = parseInt(document.getElementById("color2").value.substring(1),16);
+
+    // color1.B = (hexCode1 & 0x0000FF);
+    // color1.G = (hexCode1 & 0x00FF00) >> 8;
+    // color1.R = (hexCode1 & 0xFF0000) >> 16;
+    
+    // color2.B = (hexCode2 & 0x0000FF);
+    // color2.G = (hexCode2 & 0x00FF00) >> 8;
+    // color2.R = (hexCode2 & 0xFF0000) >> 16;
+
+    
 
     generatePalletPrev();
     draw();
 }
 
 function generatePalletPrev() {
-    let grad = ctxPreview.createLinearGradient(0,0,200,100);
-    // for(let i = 1; i < NUM_COLOR; i++) {
-    //     let str = "color" + i;
+    let grad = ctxPreview.createLinearGradient(0,0,canvasPreview.width,canvasPreview.height);
+    // for(let i = 0; i <= (NUM_COLOR - 1); i++) {
+    //     let str = "color" + (i + 1);
     //     grad.addColorStop(i * (1/NUM_COLOR), document.getElementById(str).value);
     // }
-    grad.addColorStop(0, makeColor(color1,0));
-    grad.addColorStop(1, makeColor(color2,0));
+    for(let i = 0; i < colors.length; i++) {
+        grad.addColorStop(i * (1/colors.length), colors[i].str);
+    }
+    // grad.addColorStop(0, colorGrad1.generateString());
+    // grad.addColorStop(1, colorGrad2.generateString());
 
     ctxPreview.fillStyle = grad;
-    ctxPreview.fillRect(0,0,400,100);
-}
-
-function makeColor(lerpColor, push) {
-    let value = 0x000000;
-    value |= lerpColor.B;
-    value |= (lerpColor.G << 8);
-    value |= (lerpColor.R << 16);
-
-    if (push == 1){
-        colors.push(value);
-    }
-    return "#" + value.toString(16);
+    ctxPreview.fillRect(0,0,canvasPreview.width,canvasPreview.height);
 }
 
 function addColor() {
@@ -266,6 +298,5 @@ function addColor() {
     newColorPicker.type = "color";
     newColorPicker.id = "color" + NUM_COLOR;
     document.getElementById("colorDiv" + NUM_COLOR).appendChild(newColorPicker);
-
-
+    
 }

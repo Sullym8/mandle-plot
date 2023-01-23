@@ -41,6 +41,12 @@
             </div>
             <div class="row mt-2">
               <div class="col">
+                <label for="" class="form-label">Resolution Slider</label>
+                <input type="range" class="form-control" min="0.01" max="1" id="resMul" step="0.01" value="1">
+              </div>
+            </div>
+            <div class="row mt-2">
+              <div class="col">
                 <button type="button" class="btn btn-success w-100" onclick="gradient()">Redraw</button>
               </div>
             </div>
@@ -88,7 +94,7 @@
             <hr>
             <h5 class="card-text">Color Pallet</h5>
             <div>
-              <!-- <button class="btn btn-dark w-25" onclick="addColor()">+</button> -->
+              <button class="btn btn-dark w-25" onclick="addColor()">+</button>
               <!-- <button class="btn btn-dark w-25" onclick="addColor()">-</button> -->
             </div>
             <div class="row mt-3" id="colorRow">
